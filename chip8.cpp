@@ -1,5 +1,24 @@
 #include "chip8.h"
 
+static unsigned char chip8_fontset[80] = {
+	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+	0x20, 0x60, 0x20, 0x20, 0x70, // 1
+	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+	0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+	0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+	0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+	0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+	0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+	0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+	0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+	0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+	0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+	0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+	0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+	0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+	0xF0, 0x80, 0xF0, 0x80, 0x80  // F 
+};
+
 void chip8::initialize() {
 	// Initialize registers and memory once
 
@@ -22,8 +41,7 @@ void chip8::initialize() {
 		V[i] = 0;
 
 	// Clear memory
-	for(int i = 0; i < 4096; i++) 
-		memory[i] = 0;
+	for(int i = 0; i < 4096; i++) memory[i] = 0;
 
 	// Clear keys
 	for(int i = 0; i < 16; i++)
@@ -54,7 +72,8 @@ void chip8::emulateCycle() {
 		case 0x0000:
 			switch(opcode & 0x000F) {	// differentiate b/w 0x00E0 & 0x00EE
 				case 0x0000:			// 00E0: Clears the screen
-					gfx = {0};
+					for(int i = 0; i < 2048; i++) 
+						gfx[i] = 0;
 					drawFlag = true;
 					pc += 2;
 				break;
@@ -140,7 +159,7 @@ void chip8::emulateCycle() {
 
 				case 0x0004:	// 8XY4: add VY to VX
 					if(V[(opcode & 0x00F0) >> 4] > \
-									(0xFF - V[(opcode & 0x0F00) >> 8])) {
+									(0xFF - V[(opcode & 0x0F00) >> 8])) 
 						V[0xF] = 1; // set VF to indicate carry
 					else
 						V[0xF] = 0;
@@ -267,7 +286,7 @@ void chip8::emulateCycle() {
 					pc += 2;
 				break;
 
-				case 0x000A:	// FX0A: Wait for keypress, store key in VX
+				case 0x000A: {	// FX0A: Wait for keypress, store key in VX
 					bool pressed = false;
 
 					for(int i = 0; i<16; i++) {
@@ -281,6 +300,7 @@ void chip8::emulateCycle() {
 					if(!pressed)
 						return;
 					pc += 2;
+				}
 				break;
 
 				case 0x0015:	// FX15: Set delay_timer = VX
@@ -303,7 +323,7 @@ void chip8::emulateCycle() {
 				break;
 
 				case 0x0029:	// FX29: Set I = sprite_addr[VX]
-					I = 0x50 + 5 * V[(opcode & 0x0F00) >> 8]
+					I = 0x50 + 5 * V[(opcode & 0x0F00) >> 8];
 					//				^ assuming VX stores a character (0-F)
 					pc += 2;
 				break;
@@ -361,4 +381,17 @@ void chip8::loadGame(char *file_name) {
 
 	free(buffer);
 	fclose(fp);
+}
+
+void chip8::debugRender() {
+	for(int y = 0; y < 32; y++) {
+		for(int x = 0; x < 64; x++) {
+			if(gfx[y*64 + x] == 0)
+				printf("0");
+			else
+				printf(" ");
+		}
+		printf("\n");
+	}
+	printf("\n");
 }
