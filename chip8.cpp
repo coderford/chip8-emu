@@ -10,15 +10,37 @@ void chip8::initialize() {
 	drawFlag = false;   // Reset drawFlag
 
 	// Clear display
+	for(int i = 0; i < 2048; i++) 
+		gfx[i] = 0;
+
 	// Clear stack
+	for(int i = 0; i < 16; i++) 
+		stack[i] = 0;
+
 	// Clear registers V0-VF
+	for(int i = 0; i < 16; i++) 
+		V[i] = 0;
+
 	// Clear memory
+	for(int i = 0; i < 4096; i++) 
+		memory[i] = 0;
+
+	// Clear keys
+	for(int i = 0; i < 16; i++)
+		key[i] = 0;
 
 	// Load fontset
 	for(int i = 0; i < 0x50; i++)
 		memory[i+0x50] = chip8_fontset[i];
 
 	// Reset timers
+	delay_timer = 0;
+	sound_timer = 0;
+
+	// Clear screen once
+	drawFlag = true;
+
+	srand(time(NULL));
 }
 
 void chip8::emulateCycle() {
@@ -29,15 +51,11 @@ void chip8::emulateCycle() {
 
 	// Decode and execute opcode
 	switch(opcode & 0xF000) {		// using first 4 bits to determine instr
-		case 0xA000:				// ANNN: Sets I to the address NNN
-			I = opcode & 0x0FFF;
-			pc += 2;
-		break;
-
 		case 0x0000:
 			switch(opcode & 0x000F) {	// differentiate b/w 0x00E0 & 0x00EE
 				case 0x0000:			// 00E0: Clears the screen
 					gfx = {0};
+					drawFlag = true;
 					pc += 2;
 				break;
 
@@ -49,6 +67,7 @@ void chip8::emulateCycle() {
 						sp--;
 						pc = stack[sp];
 					}
+					pc += 2;
 				break;
 
 				default:
@@ -189,7 +208,7 @@ void chip8::emulateCycle() {
 		break;
 
 		case 0xC000:	// CXKK: Set VX = pseudorandom_number & KK
-			V[(opcode & 0x0F00) >> 8] = ;//rand & (opcode & 0x00FF);
+			V[(opcode & 0x0F00) >> 8] = (rand() % 0x100) & (opcode & 0x00FF);
 			pc += 2;
 		break;
 
@@ -249,7 +268,18 @@ void chip8::emulateCycle() {
 				break;
 
 				case 0x000A:	// FX0A: Wait for keypress, store key in VX
-					// to be implemented
+					bool pressed = false;
+
+					for(int i = 0; i<16; i++) {
+						if(key[i] != 0) {	// check for any pressed keys
+							V[(opcode & 0x0F00) >> 8] = i;
+							pressed = true;
+						}
+					}
+					
+					// if no key was pressed, skip this cycle and try again
+					if(!pressed)
+						return;
 					pc += 2;
 				break;
 
