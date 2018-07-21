@@ -13,18 +13,17 @@ class chip8 {
 		unsigned short I;					// index register
 		unsigned short pc;					// program counter
 
-		unsigned char gfx[64 * 32];			// graphics array
-
 		unsigned char delay_timer;			// these timers count down at 60Hz
 		unsigned char sound_timer;
 
 		unsigned short stack[16];			// call stack
 		unsigned short sp;					// stack pointer
-
-		unsigned char key[16];				// hex keypad
 		
 	public:
+		unsigned char gfx[64 * 32];			// graphics array
+		unsigned char key[16];				// hex keypad
 		bool drawFlag;						// chip 8 doesn't draw each cycle
+
 		void initialize();
 		void emulateCycle();
 		void loadGame(char *);
