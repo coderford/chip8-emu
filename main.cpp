@@ -1,24 +1,36 @@
 // #include graphics and input libraries
 #include "chip8.h"	// cpu core implementation
 #include <SFML/Graphics.hpp>
+#define SCALE 10	// scaling factor
 
 chip8 myChip8;
 
 void drawGraphics(sf::RenderWindow *);
-sf::VertexArray screen(sf::Points, 2048);
-
+sf::VertexArray screen(sf::Quads, 64*32*4); 
 int main(int argc, char **argv) {
 	if(argc < 2) {
 		printf("Usage: chip8-emu <chip-8 application>\n\n");
 		return 1;
 	}
 	// Create window and set framerate
-	sf::RenderWindow window(sf::VideoMode(164, 132), "Chip-8 Emulator");
+	int win_w = 64*SCALE;		// Window width
+	int win_h = 32*SCALE;		// Window height
+	sf::RenderWindow window(sf::VideoMode(win_w, win_h), "Chip-8 Emulator");
 	window.setFramerateLimit(60);
 
-	for(int i = 0; i<2048; i++) {
-		screen[i].position = sf::Vector2f(i%64+50, i/64+50);
+	// Setup up screen VertexArray
+	for(int i = 0; i<64*32; i++) {
+		int base_x = (i%64)*SCALE;	// top-left point on quad
+		int base_y = (i/64)*SCALE;	//
+
+		// set positions for points on current quad (clockwise)
+		int q = i*4;	// index of the quad's first point in VertexArray
+		screen[q+0].position = sf::Vector2f(base_x, base_y);
+		screen[q+1].position = sf::Vector2f(base_x+SCALE, base_y);
+		screen[q+2].position = sf::Vector2f(base_x+SCALE, base_y+SCALE);
+		screen[q+3].position = sf::Vector2f(base_x, base_y+SCALE);
 	}
+
 	// setupInput();
 
 	// Initialize the Chip8 system and load the game into the memory
@@ -47,12 +59,18 @@ int main(int argc, char **argv) {
 }
 
 void drawGraphics(sf::RenderWindow *window_ptr) {
-	for(int i = 0; i<2048; i++) {
-		// update color of every vertex according to gfx array:
-		if(myChip8.gfx[i] != 0)
-			screen[i].color = sf::Color::White;
-		else
-			screen[i].color = sf::Color::Black;
+	for(int i = 0; i<64*32; i++) {
+		// Update color of every quad in screen according to gfx array
+		if(myChip8.gfx[i] != 0) {
+			int q = i*4;
+			for(int j = 0; j<4; j++)
+				screen[q+j].color = sf::Color::White;
+		}
+		else {
+			int q = i*4;
+			for(int j = 0; j<4; j++)
+				screen[q+j].color = sf::Color::Black;
+		}
 	}
 	// Now update the window with vertex array:
 	window_ptr->clear();
