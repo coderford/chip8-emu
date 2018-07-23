@@ -12,9 +12,10 @@ int main(int argc, char **argv) {
 		printf("Usage: chip8-emu <chip-8 application>\n\n");
 		return 1;
 	}
-	// Set up render system and register input callbacks
-	// setupGraphics();
+	// Create window and set framerate
 	sf::RenderWindow window(sf::VideoMode(164, 132), "Chip-8 Emulator");
+	window.setFramerateLimit(60);
+
 	for(int i = 0; i<2048; i++) {
 		screen[i].position = sf::Vector2f(i%64+50, i/64+50);
 	}
